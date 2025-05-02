@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">Dana Kaget Claimer</string>
+    <string name="notification_listener_label">Dana Link Detector</string>
+    <string name="accessibility_service_label">Dana Auto Clicker</string>
+    <string name="accessibility_service_description">This service automatically clicks the DanaKaget button after opening the link</string>
 </resources>

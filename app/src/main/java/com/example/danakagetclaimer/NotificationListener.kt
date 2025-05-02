@@ -42,20 +42,24 @@ class NotificationListener : NotificationListenerService() {
     private fun openDanaLink(link: String) {
         Log.d("DanaListener", "Attempting to open Dana link with multiple methods")
 
+        // Method 1
         try {
-            val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
             val linkIntent = Intent(Intent.ACTION_VIEW, Uri.parse(link)).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_CLEAR_TOP or
                         Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
             }
 
+            // Check if intent can be resolved before attempting to start
             val canResolve = linkIntent.resolveActivity(packageManager) != null
             Log.d("DanaListener", "Can resolve Dana link: $canResolve")
 
             if (canResolve) {
                 startActivity(linkIntent)
                 Log.d("DanaListener", "Method 1: Direct startActivity successful")
+
+                // Auto click
+                scheduleAutoClick(10000)
             } else {
                 Log.e("DanaListener", "Method 1: No app can handle this link")
             }
@@ -63,6 +67,7 @@ class NotificationListener : NotificationListenerService() {
             Log.e("DanaListener", "Method 1 failed: ${e.message}")
         }
 
+        // Method 2
         try {
             val handler = Handler(Looper.getMainLooper())
             handler.postDelayed({
@@ -73,21 +78,25 @@ class NotificationListener : NotificationListenerService() {
 
                     val pendingIntent = PendingIntent.getActivity(
                         this,
-                        System.currentTimeMillis().toInt(), // Unique request code
+                        System.currentTimeMillis().toInt(),
                         linkIntent,
                         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                     )
 
                     pendingIntent.send()
                     Log.d("DanaListener", "Method 2: PendingIntent.send() successful")
+
+                    // Auto click
+                    scheduleAutoClick(10000)
                 } catch (e: Exception) {
                     Log.e("DanaListener", "Method 2 failed: ${e.message}")
                 }
-            }, 1000)
+            }, 10000)
         } catch (e: Exception) {
             Log.e("DanaListener", "Method 2 setup failed: ${e.message}")
         }
 
+        // Method 3
         try {
             val broadcastIntent = Intent("com.application.OPEN_DANA_LINK").apply {
                 putExtra("link", link)
@@ -95,11 +104,32 @@ class NotificationListener : NotificationListenerService() {
             }
             sendBroadcast(broadcastIntent)
             Log.d("DanaListener", "Method 3: Broadcast sent to open link")
+
+            // Auto click
+            scheduleAutoClick(10000)
         } catch (e: Exception) {
             Log.e("DanaListener", "Method 3 failed: ${e.message}")
         }
 
         showLinkOpeningNotification(link)
+    }
+
+    private fun scheduleAutoClick(delayMs: Long) {
+        try {
+            val clickIntent = Intent("com.example.danakaget.PERFORM_CLICK").apply {
+                putExtra("delay", delayMs)
+                setPackage(packageName)
+            }
+            sendBroadcast(clickIntent)
+            Log.d("DanaListener", "Scheduled auto-click broadcast sent with ${delayMs}ms delay")
+
+            Handler(Looper.getMainLooper()).postDelayed({
+                sendBroadcast(clickIntent)
+                Log.d("DanaListener", "Backup auto-click broadcast sent")
+            }, delayMs / 2) // Backup
+        } catch (e: Exception) {
+            Log.e("DanaListener", "Failed to schedule auto-click: ${e.message}")
+        }
     }
 
     private fun showLinkOpeningNotification(link: String) {
@@ -115,6 +145,7 @@ class NotificationListener : NotificationListenerService() {
             notificationManager.createNotificationChannel(channel)
         }
 
+        // Build and show notification
         val notification = NotificationCompat.Builder(this, "dana_link_channel")
             .setContentTitle("Opening Dana Link")
             .setContentText("Opening: $link")

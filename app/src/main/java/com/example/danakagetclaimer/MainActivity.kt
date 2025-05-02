@@ -13,17 +13,30 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
+import android.widget.Button
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var statusText: TextView
+    private lateinit var enableButton: Button
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val filter = IntentFilter("com.application.OPEN_DANA_LINK")
+        statusText = findViewById(R.id.statusText)
+        enableButton = findViewById(R.id.enableButton)
+
+        enableButton.setOnClickListener {
+            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            startActivity(intent)
+        }
+
+        val filter = IntentFilter("com.example.danakagetclaimer.OPEN_DANA_LINK")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(linkReceiver, filter, RECEIVER_NOT_EXPORTED)
         } else {
@@ -32,11 +45,12 @@ class MainActivity : AppCompatActivity() {
 
         startDanaLinkService()
         requestRequiredPermissions()
+        checkAccessibilityPermission()
     }
 
     private val linkReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action == "com.yourapplication.OPEN_DANA_LINK") {
+            if (intent.action == "com.example.danakagetclaimer.OPEN_DANA_LINK") {
                 val link = intent.getStringExtra("link")
                 if (link != null) {
                     Log.d("MainActivity", "Received link in activity: $link")
@@ -135,6 +149,56 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+
+    private fun checkAccessibilityPermission() {
+        if (!isAccessibilityServiceEnabled()) {
+            AlertDialog.Builder(this)
+                .setTitle("Accessibility Permission Required")
+                .setMessage("This app needs accessibility permission to automatically click the Dana Kaget button. Please enable it in settings.")
+                .setPositiveButton("Open Settings") { _, _ ->
+                    val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                    startActivity(intent)
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+    }
+
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        val accessibilityServiceString = Settings.Secure.getString(
+            contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        )
+        val serviceName = "$packageName/.AutoClickerService"
+        return accessibilityServiceString != null && accessibilityServiceString.contains(serviceName)
+    }
+
+    private fun updateServiceStatus() {
+        if (isAccessibilityServiceEnabled(this, AutoClickerService::class.java)) {
+            statusText.text = "Service is enabled. DanaKaget links will be automatically collected."
+            enableButton.text = "Open Settings"
+        } else {
+            statusText.text = "Service is NOT enabled. Please enable the accessibility service."
+            enableButton.text = "Enable Service"
+        }
+    }
+
+    companion object {
+        fun isAccessibilityServiceEnabled(context: Context, serviceClass: Class<*>): Boolean {
+            val serviceName = "${context.packageName}/${serviceClass.canonicalName}"
+            val enabledServices = Settings.Secure.getString(
+                context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+            )
+
+            return enabledServices?.contains(serviceName) == true
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateServiceStatus()
     }
 
     override fun onDestroy() {

@@ -37,7 +37,7 @@ class DanaForegroundService : Service() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        // Create a notification for the foreground service
+        // Notification
         val notification = NotificationCompat.Builder(this, "dana_service_channel")
             .setContentTitle("Dana Link Service")
             .setContentText("Running in background to detect Dana links")
