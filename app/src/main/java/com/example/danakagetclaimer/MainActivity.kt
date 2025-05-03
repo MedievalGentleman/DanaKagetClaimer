@@ -106,7 +106,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (!isNotificationServiceEnabled()) {
-            // Show alert dialog
+            // Alert dialog
             AlertDialog.Builder(this)
                 .setTitle("Notification Access Required")
                 .setMessage("This app needs notification access to detect Dana links. Please enable it in settings.")

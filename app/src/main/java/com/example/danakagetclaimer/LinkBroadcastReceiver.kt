@@ -8,7 +8,7 @@ import android.util.Log
 
 class LinkBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == "com.application.OPEN_DANA_LINK") {
+        if (intent.action == "com.example.danakagetclaimer.OPEN_DANA_LINK") {
             val link = intent.getStringExtra("link")
             if (link != null) {
                 Log.d("DanaListener", "BroadcastReceiver received link: $link")

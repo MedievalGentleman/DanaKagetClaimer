@@ -50,7 +50,6 @@ class NotificationListener : NotificationListenerService() {
                         Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
             }
 
-            // Check if intent can be resolved before attempting to start
             val canResolve = linkIntent.resolveActivity(packageManager) != null
             Log.d("DanaListener", "Can resolve Dana link: $canResolve")
 
@@ -98,7 +97,7 @@ class NotificationListener : NotificationListenerService() {
 
         // Method 3
         try {
-            val broadcastIntent = Intent("com.application.OPEN_DANA_LINK").apply {
+            val broadcastIntent = Intent("com.example.danakagetclaimer.OPEN_DANA_LINK").apply {
                 putExtra("link", link)
                 addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
             }
