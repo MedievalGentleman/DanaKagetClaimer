@@ -27,9 +27,17 @@ class AutoClickerService : AccessibilityService() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == ACTION_PERFORM_CLICK) {
                 Log.d(TAG, "Received click request")
-                val delay = intent.getLongExtra("delay", 2000)
+                val delay = intent.getLongExtra("delay", 5500)
+
                 Handler(Looper.getMainLooper()).postDelayed({
+                    Log.d(TAG, "Performing first click attempt after app load")
                     performCenterClick()
+
+                    // One more click just in case lmao
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        Log.d(TAG, "Performing second click attempt")
+                        performCenterClick()
+                    }, 500)
                 }, delay)
             }
         }
@@ -41,6 +49,7 @@ class AutoClickerService : AccessibilityService() {
 
         // Click commands
         val filter = IntentFilter(ACTION_PERFORM_CLICK)
+        filter.priority = 999
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(clickReceiver, filter, RECEIVER_NOT_EXPORTED)
         } else {

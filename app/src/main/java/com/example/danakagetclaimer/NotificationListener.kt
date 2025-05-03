@@ -28,7 +28,7 @@ class NotificationListener : NotificationListenerService() {
         val title = extras.getString("android.title")
         val text = extras.getCharSequence("android.text")?.toString() ?: ""
 
-        if (packageName.contains("whatsapp") || packageName.contains("telegram")) {
+        if ((packageName.contains("whatsapp") || packageName.contains("telegram")) && text.contains("dana")) {
             val regex = Regex("https://link\\.dana\\.id/danakaget(?:\\?[^\\s]*)?")
             val match = regex.find(text)
 
@@ -42,29 +42,6 @@ class NotificationListener : NotificationListenerService() {
     private fun openDanaLink(link: String) {
         Log.d("DanaListener", "Attempting to open Dana link with multiple methods")
 
-        // Method 1
-        try {
-            val linkIntent = Intent(Intent.ACTION_VIEW, Uri.parse(link)).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                        Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-            }
-
-            val canResolve = linkIntent.resolveActivity(packageManager) != null
-            Log.d("DanaListener", "Can resolve Dana link: $canResolve")
-
-            if (canResolve) {
-                startActivity(linkIntent)
-                Log.d("DanaListener", "Method 1: Direct startActivity successful")
-
-                // Auto click
-                scheduleAutoClick(10000)
-            } else {
-                Log.e("DanaListener", "Method 1: No app can handle this link")
-            }
-        } catch (e: Exception) {
-            Log.e("DanaListener", "Method 1 failed: ${e.message}")
-        }
 
         // Method 2
         try {
@@ -86,29 +63,15 @@ class NotificationListener : NotificationListenerService() {
                     Log.d("DanaListener", "Method 2: PendingIntent.send() successful")
 
                     // Auto click
-                    scheduleAutoClick(10000)
+                    scheduleAutoClick(7000)
                 } catch (e: Exception) {
                     Log.e("DanaListener", "Method 2 failed: ${e.message}")
                 }
-            }, 10000)
+            }, 1000)
         } catch (e: Exception) {
             Log.e("DanaListener", "Method 2 setup failed: ${e.message}")
         }
 
-        // Method 3
-        try {
-            val broadcastIntent = Intent("com.example.danakagetclaimer.OPEN_DANA_LINK").apply {
-                putExtra("link", link)
-                addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
-            }
-            sendBroadcast(broadcastIntent)
-            Log.d("DanaListener", "Method 3: Broadcast sent to open link")
-
-            // Auto click
-            scheduleAutoClick(10000)
-        } catch (e: Exception) {
-            Log.e("DanaListener", "Method 3 failed: ${e.message}")
-        }
 
         showLinkOpeningNotification(link)
     }
@@ -144,7 +107,7 @@ class NotificationListener : NotificationListenerService() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        // Build and show notification
+        // Notification
         val notification = NotificationCompat.Builder(this, "dana_link_channel")
             .setContentTitle("Opening Dana Link")
             .setContentText("Opening: $link")
